@@ -104,7 +104,7 @@ int main( int argc, char *argv[] ){
     int numero_funcao;
     double resposta, inicio, fim, delta1;
 
-    if(argc < 3) {
+    if(argc < 4) {
         printf("Use: %s <intervalo inicial> <intervalo final> <Erro>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -112,13 +112,6 @@ int main( int argc, char *argv[] ){
     Epsilon = atof(argv[3]);
     intervalo_inicial = atof(argv[1]);
     intervalo_final = atof(argv[2]);
-
-    /*printf("Entre o invervalo inicial: ");
-    scanf("%lf", &intervalo_inicial);
-    printf("Entre o invervalo final: ");
-    scanf("%lf", &intervalo_final);
-    printf("Entre o valor de Epsilon: ");
-    scanf("%lf", &Epsilon);*/
 
     numero_funcao = menu();
     GET_TIME(inicio);

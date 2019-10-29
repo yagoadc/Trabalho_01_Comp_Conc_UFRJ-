@@ -12,20 +12,18 @@ typedef struct{
 
 //Globais
 int nThreads;
-int tam_buffer;
-int tam_ocupado = 0; //Valor eh incrementado e decrementado conforme as threads insere e retira do buffer;
+int tam_buffer; // Indica a capacidade total do buffer
+int tam_ocupado = 0; //Valor eh incrementado e decrementado conforme as threads insere e retira do buffer, tambem serve como stack pointer do buffer.
 ret * buffer;
 double soma = 0;
 double Epsilon;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
-int FINALIZA = 0;
-int count = 0; // Conta quantas threads estão em espera
+int count = 0; // Conta quantas threads estão em espera para a retirar do buffer
 
 //Funcao chamada quando uma thread percebe que o buffer encheu (tam_ocupado = tam_buffer)
 //Tracar exclusao mutua antes de chamar a funcao 
 void aloca_buffer ( ) {
-    //printf("Aloquei!\n");
     int new_tam_buffer = tam_buffer*2;
     ret *new_buffer;
     
@@ -163,12 +161,11 @@ void *concorrente(void *arg){
 
     while ( 1 ) {
 
-        //Parte consumidora ( retira elemento do buffer )
+        //Parte consumidora ( retira elemento do buffer e verifica se pode finalizar )
         pthread_mutex_lock(&mutex);
         while ( tam_ocupado == 0) {
             count++;
-            if ( count == nThreads){ // Finalizacao em cadeia, se for a ultima thread a ficar em espera e nao tiver nada no buffer
-                //printf ("tam_ocupado: %d\n", tam_ocupado);
+            if ( count == nThreads){ // Finalizacao em cadeia, se for a ultima thread a ficar em espera e nao tiver nada no buffer.
                 pthread_cond_signal (&cond);
                 pthread_mutex_unlock(&mutex);
                 pthread_exit(NULL);
@@ -179,7 +176,6 @@ void *concorrente(void *arg){
         tam_ocupado = tam_ocupado - 1;
         ret area_local = buffer[tam_ocupado];
         pthread_mutex_unlock(&mutex);
-
      
         //Parte em paralelo
         area_return = calculaAreas(area_local.x0, area_local.x1, area_local.n_func);
@@ -188,7 +184,7 @@ void *concorrente(void *arg){
         AreaMaior = area_return.maior;
 
         double diferenca = AreaMaior - (AreaMenor_esq + AreaMenor_dir);
-        //printf ("diferenca: %f\n", diferenca);
+  
         if ( fabs(diferenca) > Epsilon ) { 
             
             //Parte produtora ( insere dois elementos no buffer)
@@ -198,7 +194,6 @@ void *concorrente(void *arg){
             pthread_cond_signal (&cond);
             pthread_mutex_unlock(&mutex);
             
-
         } else {
 
             soma_local = AreaMaior;
@@ -206,11 +201,9 @@ void *concorrente(void *arg){
             //adiciona o valor da soma no valor total;
             pthread_mutex_lock(&mutex);
             soma = soma + soma_local;
-            //printf("Soma: %f\n", soma);
             pthread_mutex_unlock(&mutex);
         
         }
-
     }
     
     pthread_exit(NULL);
@@ -222,7 +215,7 @@ int main(int argc, char *argv[]){
     double inicio, fim, delta1, delta2, delta3;
     
     //valida e recebe os valores de entrada
-    if(argc < 4) {
+    if(argc < 5) {
         printf("Use: %s <numero de threads> <intervalo inicial> <intervalo final> <Erro>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
@@ -291,7 +284,6 @@ int main(int argc, char *argv[]){
     pthread_cond_destroy(&cond);
     free(buffer);
     GET_TIME(fim);
-    
     delta3 = fim-inicio;
     ////////////////////////////////////////////////////
 
